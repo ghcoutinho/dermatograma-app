@@ -254,6 +254,8 @@ textarea{resize:vertical; min-height:56px;}
     <section class="tabpage active" data-page="1">
       <div class="page-title">1 · Identificação do animal</div>
       <div class="card">
+        <label class="field">Nome do animal</label>
+        <input type="text" data-f="ident.nome" id="f-nome" placeholder="opcional — ex.: Aurora">
         <label class="field">Espécie</label>
         <select data-f="ident.especie" id="f-especie">
           <option value="Lobo-guará (Chrysocyon brachyurus)">Lobo-guará (Chrysocyon brachyurus)</option>
@@ -903,7 +905,8 @@ function renderDb(){document.getElementById("db-count").textContent=ANIMALS.leng
   if(!ANIMALS.length){host.innerHTML='<p class="sum-empty">Nenhum animal salvo ainda.</p>';return;}
   host.innerHTML=ANIMALS.map(function(a,i){var id=(a.ident||{});
     var nreg=Object.keys(a.regioes||{}).length;
-    return '<div class="anim-item"><div><div class="ai">'+escapeHtml(id.idAnimal||"—")+'</div>'+
+    return '<div class="anim-item"><div><div class="ai">'+escapeHtml(id.idAnimal||"—")+
+      (id.nome?' <span style="font-weight:500;color:var(--muted)">· '+escapeHtml(id.nome)+'</span>':"")+'</div>'+
       '<div class="am">'+escapeHtml([id.data||"",id.municipio||"",nreg+" região(ões)"].filter(Boolean).join(" · "))+'</div></div>'+
       '<button class="del" data-i="'+i+'" title="Remover">✕</button></div>';}).join("");
   host.querySelectorAll(".del").forEach(function(b){b.addEventListener("click",function(){
@@ -1058,7 +1061,7 @@ function exportFotos(){
 
 /* ================= planilha unica (todos os animais) ================= */
 function animalRows(){
-  var head=["ID Animal","Data","Horário","Espécie","Local","Município","GPS","Sexo","Sarna","Idade","Estimativa","Peso (kg)",
+  var head=["ID Animal","Nome do animal","Data","Horário","Espécie","Local","Município","GPS","Sexo","Sarna","Idade","Estimativa","Peso (kg)",
    "Inspeção indireta","Hidratação","Desidratação (%)","Mucosas","Linfonodos","Linfonodos — quais",
    "FC","FR","T °C","TPC","Pressão arterial média","SPO2","Glicemia","ECC","Palpação",
    "Usuário","Equipe","Observações gerais","Nº regiões acometidas","Nº lesões registradas","Nº de fotos","Salvo em"];
@@ -1066,7 +1069,7 @@ function animalRows(){
   ANIMALS.forEach(function(a){var i=a.ident||{},c=a.clinico||{},e=a.extra||{},rg=a.regioes||{};
     var nreg=Object.keys(rg).length,nles=0;
     Object.keys(rg).forEach(function(k){nles+=Object.keys(rg[k].lesoes||{}).length;});
-    rows.push([i.idAnimal||"",i.data||"",i.horario||"",i.especie||"",i.local||"",i.municipio||"",i.gps||"",
+    rows.push([i.idAnimal||"",i.nome||"",i.data||"",i.horario||"",i.especie||"",i.local||"",i.municipio||"",i.gps||"",
       i.sexo||"",i.sarna||"",i.idade||"",i.estimativa||"",i.peso||"",
       c.inspecao||"",c.hidratacao||"",(c.hidratacao==="Desidratado"&&c.desidratacao)?String(c.desidratacao):"",
       c.mucosas||"",c.linfonodos||"",(c.linfonodos==="Reativos")?(c.linfonodosQuais||""):"",
@@ -1129,7 +1132,7 @@ function resumoRows(){
   return rows;}
 function exportExcel(){
   if(!ANIMALS.length&&!confirm("Nenhum animal foi salvo na planilha ainda. Exportar mesmo assim (planilha vazia)?"))return;
-  var sheets=[{name:"Animais",rows:animalRows(),widths:[16,12,9,30,20,20,22,12,12,10,14,10,30,15,14,14,14,26,8,8,8,8,20,8,10,8,30,20,20,34,10,10,10,18]},
+  var sheets=[{name:"Animais",rows:animalRows(),widths:[16,18,12,9,30,20,20,22,12,12,10,14,10,30,15,14,14,14,26,8,8,8,8,20,8,10,8,30,20,20,34,10,10,10,18]},
               {name:"Lesões",rows:lesionRows(),widths:[16,12,20,9,28,20,7,13,20,11,34,34]},
               {name:"Material",rows:materialRows(),widths:[16,12].concat(MATERIALS.map(function(){return 24;})).concat(matLegadoUsadas().map(function(){return 26;})).concat([26])},
               {name:"Locais",rows:locaisRows(),widths:[30,14,40,16,16]},
