@@ -1,4 +1,4 @@
-# Dermatograma — Canídeos Silvestres
+# Dermatograma — Canídeos Silvestres - Gustavo Henrique Coutinho
 
 Aplicativo de campo para a ficha **Dados clínicos e coleta de amostras** do projeto
 *Dermatopatias em Canídeos Silvestres* (Doutorado em Patologia Animal — UFMG).
