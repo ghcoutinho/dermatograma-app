@@ -1101,7 +1101,7 @@ var EXAM_DIC = {
     ["creatinina","Creatinina","mg/dL",["creatinina"]],
     ["alt","ALT (TGP)","U/L",["alt (tgp)","alanina aminotransferase","tgp","alt"]],
     ["ast","AST (TGO)","U/L",["ast (tgo)","aspartato aminotransferase","tgo","ast"]],
-    ["fa","Fosfatase alcalina","U/L",["fosfatase alcalina","fosfatase"]],
+    ["fa","Fosfatase alcalina","U/L",["fosfatase alcalina","fosfatase","fal","fa"]],
     ["ggt","GGT","U/L",["gama glutamil transferase","gama gt","ggt"]],
     ["ptn_totais","Proteínas totais","g/dL",["proteinas totais sericas","proteinas totais","proteina total"]],
     ["albumina","Albumina","g/dL",["albumina"]],
@@ -1180,7 +1180,8 @@ function parseExame(text){
   var syns=exSyns();
   var linhas=String(text||"").split(/\r?\n/);
   linhas.forEach(function(linRaw){
-    var lin=linRaw.replace(/\t/g," ").trim();
+    /* remove pontos de abreviacao (V.C.M. -> VCM) mas mantem decimais/milhar (65.4, 280.000) */
+    var lin=linRaw.replace(/\t/g," ").replace(/\.(?![0-9])/g,"").trim();
     if(lin.length<2) return;
     var low=exNoAcc(lin);
     /* 1) tenta analitos conhecidos (mais especifico primeiro) */
@@ -1188,9 +1189,11 @@ function parseExame(text){
       var sy=syns[i];
       var pos=low.indexOf(sy.syn);
       if(pos<0) continue;
-      /* limite de palavra a esquerda */
+      /* limites de palavra: nao pode ter letra/numero colado antes, nem letra colada depois */
       var antes=low.charAt(pos-1);
       if(antes && /[a-z0-9]/.test(antes)) continue;
+      var depois=low.charAt(pos+sy.syn.length);
+      if(depois && /[a-z]/.test(depois)) continue;
       if(res[sy.sec][sy.key]!==undefined) return;  /* ja preenchido nesta linha? pula linha */
       var resto=lin.slice(pos+sy.syn.length);
       var val=exFirstNum(resto);
