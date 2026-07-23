@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#3A7373">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,12 +13,13 @@
 <link rel="icon" href="icon-192.png">
 <title>Dermatograma — Canídeos Silvestres</title>
 <style>
-:root{--teal:#0f766e; --teal-d:#0b5a54; --bg:#eef2f1; --card:#ffffff; --ink:#1c2b2a; --muted:#63736f;
-  --line:#dfe6e4; --accent:#e0362e; --chip:#e9f3f1; --shadow:0 2px 10px rgba(16,60,55,.10);}
+:root{--teal:#3A7373; --teal-d:#2f5f5f; --sage:#729B85; --terra:#D27357; --slate:#2C3E50; --ocre:#E6B156;
+  --bg:#F5F7F8; --card:#ffffff; --ink:#2C3E50; --muted:#5f6f7d;
+  --line:#e2e8ea; --accent:#e0362e; --chip:#e6efef; --shadow:0 2px 10px rgba(44,62,80,.08);}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:#c9d4d1; color:var(--ink); font-size:15px; line-height:1.4; display:flex; justify-content:center;}
+  background:#dbe2e5; color:var(--ink); font-size:15px; line-height:1.4; display:flex; justify-content:center;}
 #app{width:100%; max-width:430px; background:var(--bg); min-height:100vh; display:flex; flex-direction:column;
   position:relative; box-shadow:0 0 30px rgba(0,0,0,.18);}
 header.appbar{position:sticky; top:0; z-index:30; background:linear-gradient(135deg,var(--teal),var(--teal-d)); color:#fff;
@@ -29,32 +30,52 @@ header.appbar{position:sticky; top:0; z-index:30; background:linear-gradient(135
 .appbar p{margin:2px 0 0; font-size:10.5px; opacity:.85;}
 .hbtn{border:0; border-radius:9px; padding:8px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
 .hbtn.save{background:#fff; color:var(--teal-d);} .hbtn.new{background:rgba(255,255,255,.16); color:#fff;}
-.tabs{display:flex; gap:4px; padding:0 8px 8px; overflow-x:auto;}
-.tab{flex:1 0 auto; border:0; background:rgba(255,255,255,.14); color:#eafffb; border-radius:9px 9px 0 0;
-  padding:9px 8px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap; opacity:.8;}
-.tab .tn{display:inline-flex; width:18px; height:18px; border-radius:50%; background:rgba(255,255,255,.25);
-  align-items:center; justify-content:center; font-size:10.5px; margin-right:4px;}
-.tab.active{background:var(--bg); color:var(--teal-d); opacity:1;}
-.tab.active .tn{background:var(--teal); color:#fff;}
+.tabs{display:flex; gap:6px; padding:8px; overflow-x:auto; background:var(--bg);}
+.tab{flex:1 0 auto; border:0; border-radius:10px; padding:8px 10px; font-size:11.5px; font-weight:700;
+  cursor:pointer; white-space:nowrap;}
+.tab .tn{display:inline-flex; width:18px; height:18px; border-radius:50%; align-items:center;
+  justify-content:center; font-size:10.5px; margin-right:5px;}
+/* cores por aba — inativa: 20% opacidade; ativa: cor sólida */
+.tab[data-tab="1"]{background:rgba(58,115,115,.20); color:#3A7373;}
+.tab[data-tab="1"] .tn{background:rgba(58,115,115,.28); color:#3A7373;}
+.tab[data-tab="1"].active{background:#3A7373; color:#fff;}
+.tab[data-tab="2"]{background:rgba(114,155,133,.20); color:#557C67;}
+.tab[data-tab="2"] .tn{background:rgba(114,155,133,.30); color:#557C67;}
+.tab[data-tab="2"].active{background:#729B85; color:#fff;}
+.tab[data-tab="3"]{background:rgba(44,62,80,.16); color:#2C3E50;}
+.tab[data-tab="3"] .tn{background:rgba(44,62,80,.24); color:#2C3E50;}
+.tab[data-tab="3"].active{background:#2C3E50; color:#fff;}
+.tab[data-tab="4"]{background:rgba(210,115,87,.20); color:#BB5539;}
+.tab[data-tab="4"] .tn{background:rgba(210,115,87,.28); color:#BB5539;}
+.tab[data-tab="4"].active{background:#D27357; color:#fff;}
+.tab[data-tab="5"]{background:rgba(230,177,86,.26); color:#9A6E15;}
+.tab[data-tab="5"] .tn{background:rgba(230,177,86,.34); color:#9A6E15;}
+.tab[data-tab="5"].active{background:#E6B156; color:#2C3E50;}
+.tab.active .tn{background:rgba(255,255,255,.28); color:#fff;}
+.tab[data-tab="5"].active .tn{background:rgba(44,62,80,.18); color:#2C3E50;}
 main{flex:1; padding:14px 12px 110px;}
 .tabpage{display:none;} .tabpage.active{display:block;}
-.page-title{font-size:16px; font-weight:800; color:var(--teal-d); margin:2px 0 12px;}
+.page-title{font-size:16px; font-weight:800; color:var(--slate); margin:2px 0 12px;}
 .card{background:var(--card); border-radius:14px; padding:14px 15px; margin-bottom:12px; box-shadow:var(--shadow);}
-label.field{display:block; margin:10px 0 0; font-size:12.5px; color:var(--muted); font-weight:600;}
+label.field{display:block; margin:10px 0 0; font-size:12.5px; color:var(--slate); font-weight:600;}
 input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
   width:100%; margin-top:4px; padding:10px 11px; border:1px solid var(--line); border-radius:9px;
   font-size:15px; font-family:inherit; color:var(--ink); background:#fbfdfc;}
-input:focus,textarea:focus,select:focus{outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,118,110,.12);}
+input:focus,textarea:focus,select:focus{outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(58,115,115,.18);}
 textarea{resize:vertical; min-height:56px;}
 .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:8px;}
 .seg{display:flex; gap:6px; margin-top:5px; flex-wrap:wrap;}
 .seg label{flex:1 1 auto; min-width:60px; position:relative; display:block;}
 .seg input{position:absolute; opacity:0; pointer-events:none;}
-.seg label .box{display:block; text-align:center; padding:9px 6px; border:1px solid var(--line); border-radius:9px;
-  font-size:13px; background:#fbfdfc; cursor:pointer; font-weight:600;}
+.seg label .box{display:block; text-align:center; padding:9px 6px; border:1px solid rgba(114,155,133,.55); border-radius:9px;
+  font-size:13px; background:#fbfdfc; cursor:pointer; font-weight:600; color:var(--ink);}
 .seg input:checked + .box{background:var(--teal); border-color:var(--teal); color:#fff;}
+/* Sarna: Sim=Teal, Não=Terracota, Indeterminado=Verde Salva */
+.seg input[name="sarna"][value="Sim"]:checked + .box{background:var(--teal); border-color:var(--teal); color:#fff;}
+.seg input[name="sarna"][value="Não"]:checked + .box{background:var(--terra); border-color:var(--terra); color:#fff;}
+.seg input[name="sarna"][value="Indeterminado"]:checked + .box{background:var(--sage); border-color:var(--sage); color:#fff;}
 .hint{font-size:12px; color:var(--muted); margin:8px 0 0;}
-.subhead{font-size:12px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:.4px; margin:16px 0 2px;}
+.subhead{font-size:12px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.4px; margin:16px 0 2px;}
 .derma-tools{display:flex; align-items:center; gap:8px; margin:4px 0 8px; flex-wrap:wrap;}
 .derma-tools .zbtn{width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:#fff;
   font-size:18px; font-weight:700; color:var(--teal); cursor:pointer;}
@@ -62,8 +83,8 @@ textarea{resize:vertical; min-height:56px;}
 .derma-scroll{overflow:auto; border:1px solid var(--line); border-radius:12px; background:#fff;
   -webkit-overflow-scrolling:touch; max-height:64vh;}
 #derma-svg{display:block; height:auto;}
-.hot{fill:rgba(15,118,110,.06); stroke:rgba(15,118,110,.55); stroke-width:2.5; cursor:pointer; transition:fill .15s,stroke .15s;}
-.hot:hover{fill:rgba(15,118,110,.2);}
+.hot{fill:rgba(58,115,115,.06); stroke:rgba(58,115,115,.55); stroke-width:2.5; cursor:pointer; transition:fill .15s,stroke .15s;}
+.hot:hover{fill:rgba(58,115,115,.2);}
 .hot.has-data{fill:rgba(224,54,46,.32); stroke:var(--accent); stroke-width:4.5;}
 .hotnum{font-size:16px; font-weight:800; fill:#0b3b37; pointer-events:none; text-anchor:middle; dominant-baseline:central;
   paint-order:stroke; stroke:#fff; stroke-width:3px;}
@@ -234,9 +255,9 @@ textarea{resize:vertical; min-height:56px;}
 .exrow{display:flex; flex-direction:column;}
 .exrow label{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:3px;}
 .exrow input{padding:8px 9px; font-size:14px;}
-.exrow input.filled{border-color:var(--teal); background:#f2faf8;}
-.exrow input.exauto{border-color:#9ad3c8; background:#eefaf7;}
-.exval.exro{background:#eef2f1;color:var(--teal-d);font-weight:700;border-style:dashed;}
+.exrow input.filled{border-color:var(--teal); background:#eef4f4;}
+.exrow input.exauto{border-color:#8fb3b3; background:#eaf1f1;}
+.exval.exro{background:#eef2f4;color:var(--teal-d);font-weight:700;border-style:dashed;}
 .exrow.exdiff{grid-column:1/-1;}
 .exdiff2{display:flex;gap:8px;}
 .exdiff2 span{flex:1;display:flex;align-items:center;gap:4px;}
@@ -286,7 +307,7 @@ textarea{resize:vertical; min-height:56px;}
         <div class="gpsinfo" id="loc-info"></div>
         <div class="rowbtn">
           <div><label class="field">GPS</label><input type="text" data-f="ident.gps" id="f-gps" placeholder="latitude, longitude"></div>
-          <button class="minibtn" id="btn-gps" type="button">📍 Obter</button>
+          <button class="minibtn" id="btn-gps" type="button"><svg width="12" height="14" viewBox="0 0 24 24" fill="#D27357" style="vertical-align:-2px;margin-right:2px"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg>Obter</button>
         </div>
         <div class="gpsinfo" id="gps-info">Toque em “Obter” para capturar a posição do aparelho.</div>
         <div style="margin-top:5px"><button type="button" class="linkbtn" id="btn-gps-help">Não consegue o GPS? Veja como resolver</button></div>
@@ -379,7 +400,7 @@ textarea{resize:vertical; min-height:56px;}
             </svg>
           </div>
           <div class="derma-legend">
-            <span><span class="dot" style="background:rgba(15,118,110,.55)"></span>Sem registro</span>
+            <span><span class="dot" style="background:rgba(58,115,115,.55)"></span>Sem registro</span>
             <span><span class="dot" style="background:var(--accent)"></span>Com lesão registrada</span>
           </div>
         </div>
