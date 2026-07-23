@@ -425,9 +425,17 @@ textarea{resize:vertical; min-height:56px;}
         <div id="ex-avisos"></div>
       </div>
       <div class="card">
-        <div class="subhead" style="margin-top:2px">Hemograma</div>
+        <div class="subhead" style="margin-top:2px">Eritrograma</div>
         <p class="hint">Apenas números — a unidade está no rótulo.</p>
-        <div class="exgrid" id="ex-hemograma"></div>
+        <div class="exgrid" id="ex-eritrograma"></div>
+      </div>
+      <div class="card">
+        <div class="subhead" style="margin-top:2px">Leucograma</div>
+        <div class="exgrid" id="ex-leucograma"></div>
+      </div>
+      <div class="card">
+        <div class="subhead" style="margin-top:2px">Plaquetas</div>
+        <div class="exgrid" id="ex-plaquetas"></div>
       </div>
       <div class="card">
         <div class="subhead" style="margin-top:2px">Bioquímicas séricas</div>
@@ -1222,25 +1230,33 @@ function recalcExames(){
            else { card.style.display="none"; box.innerHTML=""; } }
 }
 
+var HEMO_GRUPOS={
+  "ex-eritrograma":["eritrocitos","hemoglobina","hematocrito","vcm","hcm","chcm","rdw","ppt"],
+  "ex-leucograma":["leucocitos","metamielocitos","bastonetes","segmentados","eosinofilos","basofilos","linfocitos","monocitos"],
+  "ex-plaquetas":["plaquetas"]
+};
+function exRowHtml(sec,a){
+  var k=a[0], uni=a[2]?' <span style="color:#9aa">('+a[2]+')</span>':'';
+  if(DIFF_CELLS.indexOf(k)>=0){
+    return '<div class="exrow exdiff"><label>'+a[1]+'</label><div class="exdiff2">'+
+      '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'_pct" placeholder="%"><small>%</small></span>'+
+      '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="nº"><small>/µL</small></span></div></div>';
+  }
+  if(DERIVED_RO.indexOf(k)>=0){
+    return '<div class="exrow"><label>'+a[1]+uni+' <span style="color:#9aa">(auto)</span></label>'+
+      '<input type="text" class="exval exro" data-sec="'+sec+'" data-key="'+k+'" readonly placeholder="—"></div>';
+  }
+  var extra=(DERIVED_FILL.indexOf(k)>=0)?' <span style="color:#9aa">(calc.)</span>':'';
+  return '<div class="exrow"><label>'+a[1]+uni+extra+'</label>'+
+    '<input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="—"></div>';
+}
 function buildExamGrids(){
-  ["hemograma","bioquimica"].forEach(function(sec){
-    var host=document.getElementById(sec==="hemograma"?"ex-hemograma":"ex-bioquimica");
-    host.innerHTML=EXAM_DIC[sec].map(function(a){
-      var k=a[0], uni=a[2]?' <span style="color:#9aa">('+a[2]+')</span>':'';
-      if(DIFF_CELLS.indexOf(k)>=0){
-        return '<div class="exrow exdiff"><label>'+a[1]+'</label><div class="exdiff2">'+
-          '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'_pct" placeholder="%"><small>%</small></span>'+
-          '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="nº"><small>/µL</small></span></div></div>';
-      }
-      if(DERIVED_RO.indexOf(k)>=0){
-        return '<div class="exrow"><label>'+a[1]+uni+' <span style="color:#9aa">(auto)</span></label>'+
-          '<input type="text" class="exval exro" data-sec="'+sec+'" data-key="'+k+'" readonly placeholder="—"></div>';
-      }
-      var extra=(DERIVED_FILL.indexOf(k)>=0)?' <span style="color:#9aa">(calc.)</span>':'';
-      return '<div class="exrow"><label>'+a[1]+uni+extra+'</label>'+
-        '<input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="—"></div>';
-    }).join("");
+  var dicH={}; EXAM_DIC.hemograma.forEach(function(a){dicH[a[0]]=a;});
+  Object.keys(HEMO_GRUPOS).forEach(function(hid){
+    var host=document.getElementById(hid);
+    host.innerHTML=HEMO_GRUPOS[hid].map(function(k){return dicH[k]?exRowHtml("hemograma",dicH[k]):"";}).join("");
   });
+  document.getElementById("ex-bioquimica").innerHTML=EXAM_DIC.bioquimica.map(function(a){return exRowHtml("bioquimica",a);}).join("");
   document.querySelectorAll(".exval").forEach(function(inp){
     if(inp.readOnly)return;
     inp.addEventListener("change",function(){
