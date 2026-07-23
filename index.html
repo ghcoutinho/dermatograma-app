@@ -1499,14 +1499,23 @@ document.getElementById("btn-gal").addEventListener("click",function(){document.
 document.getElementById("in-cam").addEventListener("change",function(){addFotos(this.files);this.value="";});
 document.getElementById("in-gal").addEventListener("change",function(){addFotos(this.files);this.value="";});
 
-function nomeFoto(idAnimal,n,i){return asciiOnly(idAnimal||"SEM_ID").replace(/[^A-Za-z0-9_\-]/g,"")+"_R"+n+"_"+(i+1)+".jpg";}
+function lesoesSigla(regData){
+  var ts=LESION_TYPES.filter(function(t){return regData&&regData.lesoes&&regData.lesoes[t];});
+  return ts.length?ts.map(function(t){return LESION_SIGLA[t]||t;}).join("-"):"SL";
+}
+/* padrao: Regiao.Lesoes_ID-Numero  (ex.: 17.A-E_LG-SAN-S-001-1.jpg) */
+function nomeFoto(idAnimal,n,regData,i){
+  var id=asciiOnly(idAnimal||"SEM_ID").replace(/[^A-Za-z0-9_\-]/g,"");
+  var les=asciiOnly(lesoesSigla(regData)).replace(/[^A-Za-z0-9\-]/g,"");
+  return n+"."+les+"_"+id+"-"+(i+1)+".jpg";
+}
 function listaFotos(){
   var itens=[];
   ANIMALS.forEach(function(a){var id=(a.ident||{}).idAnimal||"SEM_ID";
     Object.keys(a.regioes||{}).forEach(function(n){
-      ((a.regioes[n]||{}).fotos||[]).forEach(function(f,i){itens.push({id:f.id,nome:nomeFoto(id,n,i)});});});});
+      ((a.regioes[n]||{}).fotos||[]).forEach(function(f,i){itens.push({id:f.id,nome:nomeFoto(id,n,a.regioes[n],i)});});});});
   Object.keys(REG).forEach(function(n){
-    ((REG[n]||{}).fotos||[]).forEach(function(f,i){itens.push({id:f.id,nome:nomeFoto("EM_EDICAO",n,i)});});});
+    ((REG[n]||{}).fotos||[]).forEach(function(f,i){itens.push({id:f.id,nome:nomeFoto("EM_EDICAO",n,REG[n],i)});});});
   return itens;}
 function contaFotos(a){var t=0;Object.keys(a.regioes||{}).forEach(function(n){t+=(((a.regioes[n]||{}).fotos)||[]).length;});return t;}
 function listaArquivosExame(){
@@ -1558,7 +1567,7 @@ function lesionRows(){
     Object.keys(rg).map(Number).sort(function(x,y){return x-y;}).forEach(function(n){
       var d=rg[n],meta=REGMAP[n]||{g:""},les=d.lesoes||{};
       var tipos=LESION_TYPES.filter(function(t){return !!les[t];});
-      var fts=(d.fotos||[]).map(function(f,k){return nomeFoto(i.idAnimal,n,k);}).join("; ");
+      var fts=(d.fotos||[]).map(function(f,k){return nomeFoto(i.idAnimal,n,d,k);}).join("; ");
       if(!tipos.length){rows.push([i.idAnimal||"",i.data||"",i.municipio||"",String(n),meta.g,"—","","","","",d.obs||"",fts]);return;}
       tipos.forEach(function(t){var L=les[t];
         rows.push([i.idAnimal||"",i.data||"",i.municipio||"",String(n),meta.g,t,LESION_SIGLA[t]||"",L.int||"",L.dist||"",(L.pct||L.pct===0)?String(L.pct):"",d.obs||"",fts]);});});});
