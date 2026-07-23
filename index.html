@@ -235,6 +235,14 @@ textarea{resize:vertical; min-height:56px;}
 .exrow label{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:3px;}
 .exrow input{padding:8px 9px; font-size:14px;}
 .exrow input.filled{border-color:var(--teal); background:#f2faf8;}
+.exrow input.exauto{border-color:#9ad3c8; background:#eefaf7;}
+.exval.exro{background:#eef2f1;color:var(--teal-d);font-weight:700;border-style:dashed;}
+.exrow.exdiff{grid-column:1/-1;}
+.exdiff2{display:flex;gap:8px;}
+.exdiff2 span{flex:1;display:flex;align-items:center;gap:4px;}
+.exdiff2 small{color:#9aa;font-size:11px;white-space:nowrap;}
+#ex-avisos .av{font-size:12.5px;color:#7a1f1a;padding:5px 0;border-bottom:1px solid #f0dcc0;}
+#ex-avisos .av:last-child{border-bottom:0;}
 .exout{display:grid; grid-template-columns:1fr 78px 74px 30px; gap:6px; align-items:center; margin-top:6px;}
 .exout input{padding:7px 7px; font-size:12.5px; margin-top:0;}
 .exout .del{border:0; background:transparent; color:var(--accent); font-size:16px; cursor:pointer;}
@@ -411,6 +419,10 @@ textarea{resize:vertical; min-height:56px;}
           <input type="file" id="in-exame" accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" style="display:none">
         </div>
         <div class="gpsinfo" id="exame-arquivo" style="margin-top:6px"></div>
+      </div>
+      <div class="card" id="ex-avisos-card" style="display:none;border:1px solid #f0d6a8;background:#fff6e8">
+        <div class="subhead" style="margin-top:2px;color:#a8620f">Divergências a conferir</div>
+        <div id="ex-avisos"></div>
       </div>
       <div class="card">
         <div class="subhead" style="margin-top:2px">Hemograma</div>
@@ -1064,9 +1076,16 @@ var EXAM_DIC = {
     ["amilase","Amilase","U/L",["amilase"]],
     ["lipase","Lipase","U/L",["lipase"]],
     ["ck","Creatina quinase (CK)","U/L",["creatina quinase","creatinofosfoquinase","cpk","ck"]],
-    ["fructosamina","Frutosamina","µmol/L",["frutosamina","fructosamina"]]
+    ["fructosamina","Frutosamina","µmol/L",["frutosamina","fructosamina"]],
+    ["ag_ratio","Relação Albumina/Globulina","",["relacao albumina globulina","relacao a/g","a/g"]],
+    ["ur_creat","Relação Ureia/Creatinina","",["relacao ureia creatinina","ureia/creatinina"]],
+    ["ca_corr","Cálcio corrigido","mg/dL",["calcio corrigido"]]
   ]
 };
+var EXKEY_LABEL={}; ["hemograma","bioquimica"].forEach(function(sc){EXAM_DIC[sc].forEach(function(a){EXKEY_LABEL[a[0]]=a[1];});});
+var DIFF_CELLS=["metamielocitos","bastonetes","segmentados","eosinofilos","basofilos","linfocitos","monocitos"];
+var DERIVED_FILL=["vcm","hcm","chcm","globulinas","bili_indireta"];   /* preenche vazio + avisa se divergir */
+var DERIVED_RO=["ag_ratio","ur_creat","ca_corr"];                     /* sempre calculado (read-only) */
 var EXAM_BLOCK = ["paciente","especie","espécie","data","laboratorio","laboratório","clinica","clínica","resultado",
   "referencia","referência","unidade","analito","analitos","veterinario","veterinário","crmv","proprietario",
   "proprietário","tutor","idade","sexo","raca","raça","material","metodo","método","obs","observacao","observação",
@@ -1151,20 +1170,85 @@ function parseExame(text){
 
 var EXAME={valores:{},outros:[],arquivo:null};
 
+
+/* ---- motor de calculos derivados ---- */
+function exFindInput(key){return document.querySelector('.exval[data-key="'+key+'"]');}
+function exFmt(v){return String(v).replace(".",",");}
+function exRound(v,d){var f=Math.pow(10,d||0);return Math.round(v*f)/f;}
+function exNum(k){var v=EXAME.valores[k];return (typeof v==="number"&&isFinite(v))?v:null;}
+function exAuto(k){return !!(EXAME.auto&&EXAME.auto[k]);}
+function exSet(key,val){ /* preenche automaticamente e marca como auto */
+  if(val===null||val===undefined||!isFinite(val))return;
+  EXAME.valores[key]=val; if(!EXAME.auto)EXAME.auto={}; EXAME.auto[key]=true;
+  var inp=exFindInput(key); if(inp){inp.value=exFmt(val); inp.classList.add("filled"); if(!inp.readOnly)inp.classList.add("exauto");}
+}
+function exSetRO(key,val){ /* derivado read-only: sempre atualiza */
+  var inp=exFindInput(key);
+  if(val===null||val===undefined||!isFinite(val)){ delete EXAME.valores[key]; if(inp)inp.value=""; return; }
+  EXAME.valores[key]=val; if(inp)inp.value=exFmt(val);
+}
+function recalcExames(){
+  var avisos=[]; var tot=exNum("leucocitos");
+  /* diferencial: % <-> absoluto (usa leucocitos totais) */
+  DIFF_CELLS.forEach(function(k){
+    var ab=exNum(k), pc=exNum(k+"_pct");
+    if(tot&&tot>0){
+      if(pc!==null && (ab===null||exAuto(k))) exSet(k, exRound(pc*tot/100,0));
+      else if(ab!==null && (pc===null||exAuto(k+"_pct"))) exSet(k+"_pct", exRound(ab*100/tot,1));
+      else if(ab!==null && pc!==null){ var esp=pc*tot/100; if(Math.abs(esp-ab)>Math.max(50,ab*0.1)) avisos.push(EXKEY_LABEL[k]+": "+exFmt(ab)+"/µL não bate com "+exFmt(pc)+"% ("+exFmt(exRound(esp,0))+")"); }
+    }
+  });
+  function fill(key,val,tol){
+    if(val===null||!isFinite(val))return;
+    var cur=exNum(key);
+    if(cur===null||exAuto(key)){ exSet(key,val); }
+    else if(Math.abs(cur-val)>Math.max(tol,Math.abs(val)*0.05)){ avisos.push(EXKEY_LABEL[key]+": laudo "+exFmt(cur)+" × calculado "+exFmt(val)); }
+  }
+  var He=exNum("eritrocitos"),Hb=exNum("hemoglobina"),Ht=exNum("hematocrito"),
+      PT=exNum("ptn_totais"),Alb=exNum("albumina"),BT=exNum("bili_total"),BD=exNum("bili_direta"),
+      Ur=exNum("ureia"),Cr=exNum("creatinina"),Ca=exNum("calcio");
+  if(He&&He>0){ if(Ht!==null)fill("vcm",exRound(Ht*10/He,1),1); if(Hb!==null)fill("hcm",exRound(Hb*10/He,1),0.5); }
+  if(Ht&&Ht>0&&Hb!==null){ fill("chcm",exRound(Hb*100/Ht,1),0.5); }
+  if(PT!==null&&Alb!==null){ fill("globulinas",exRound(PT-Alb,2),0.2); }
+  if(BT!==null&&BD!==null){ fill("bili_indireta",exRound(BT-BD,2),0.1); }
+  /* read-only sempre calculado */
+  var Glo=exNum("globulinas");
+  exSetRO("ag_ratio",(Alb!==null&&Glo&&Glo!==0)?exRound(Alb/Glo,2):null);
+  exSetRO("ur_creat",(Ur!==null&&Cr&&Cr!==0)?exRound(Ur/Cr,1):null);
+  exSetRO("ca_corr",(Ca!==null&&Alb!==null)?exRound(Ca-Alb+3.5,1):null);
+  /* avisos */
+  var card=document.getElementById("ex-avisos-card"), box=document.getElementById("ex-avisos");
+  if(box){ if(avisos.length){ card.style.display="block"; box.innerHTML=avisos.map(function(a){return '<div class="av">⚠ '+a+'</div>';}).join(""); }
+           else { card.style.display="none"; box.innerHTML=""; } }
+}
+
 function buildExamGrids(){
   ["hemograma","bioquimica"].forEach(function(sec){
     var host=document.getElementById(sec==="hemograma"?"ex-hemograma":"ex-bioquimica");
     host.innerHTML=EXAM_DIC[sec].map(function(a){
-      return '<div class="exrow"><label>'+a[1]+' <span style="color:#9aa">('+a[2]+')</span></label>'+
-        '<input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+a[0]+'" placeholder="—"></div>';
+      var k=a[0], uni=a[2]?' <span style="color:#9aa">('+a[2]+')</span>':'';
+      if(DIFF_CELLS.indexOf(k)>=0){
+        return '<div class="exrow exdiff"><label>'+a[1]+'</label><div class="exdiff2">'+
+          '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'_pct" placeholder="%"><small>%</small></span>'+
+          '<span><input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="nº"><small>/µL</small></span></div></div>';
+      }
+      if(DERIVED_RO.indexOf(k)>=0){
+        return '<div class="exrow"><label>'+a[1]+uni+' <span style="color:#9aa">(auto)</span></label>'+
+          '<input type="text" class="exval exro" data-sec="'+sec+'" data-key="'+k+'" readonly placeholder="—"></div>';
+      }
+      var extra=(DERIVED_FILL.indexOf(k)>=0)?' <span style="color:#9aa">(calc.)</span>':'';
+      return '<div class="exrow"><label>'+a[1]+uni+extra+'</label>'+
+        '<input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+k+'" placeholder="—"></div>';
     }).join("");
   });
   document.querySelectorAll(".exval").forEach(function(inp){
+    if(inp.readOnly)return;
     inp.addEventListener("change",function(){
-      var v=exParseNum(this.value);
-      if(v===null){ this.value=""; delete EXAME.valores[this.dataset.key]; this.classList.remove("filled"); }
-      else { this.value=String(v).replace(".",","); EXAME.valores[this.dataset.key]=v; this.classList.add("filled"); }
-      schedulePersist();
+      var k=this.dataset.key, v=exParseNum(this.value);
+      if(EXAME.auto)delete EXAME.auto[k];
+      if(v===null){ this.value=""; delete EXAME.valores[k]; this.classList.remove("filled","exauto"); }
+      else { this.value=exFmt(v); EXAME.valores[k]=v; this.classList.add("filled"); this.classList.remove("exauto"); }
+      recalcExames(); schedulePersist();
     });
   });
 }
@@ -1194,13 +1278,13 @@ document.getElementById("btn-ex-outro").addEventListener("click",function(){
   EXAME.outros.push({nome:"",valor:"",unidade:""}); renderExOutros(); schedulePersist();});
 
 function applyExame(ex){
-  EXAME=ex&&typeof ex==="object"?{valores:ex.valores||{},outros:ex.outros||[],arquivo:ex.arquivo||null}:{valores:{},outros:[],arquivo:null};
+  EXAME=ex&&typeof ex==="object"?{valores:ex.valores||{},outros:ex.outros||[],arquivo:ex.arquivo||null,auto:ex.auto||{}}:{valores:{},outros:[],arquivo:null,auto:{}};
   document.querySelectorAll(".exval").forEach(function(inp){
     var v=EXAME.valores[inp.dataset.key];
-    if(v!==undefined&&v!==null){inp.value=String(v).replace(".",",");inp.classList.add("filled");}
-    else{inp.value="";inp.classList.remove("filled");}
+    if(v!==undefined&&v!==null){inp.value=exFmt(v);inp.classList.add("filled");if(exAuto(inp.dataset.key)&&!inp.readOnly)inp.classList.add("exauto");}
+    else{inp.value="";inp.classList.remove("filled","exauto");}
   });
-  renderExOutros(); renderExameArquivo();
+  renderExOutros(); renderExameArquivo(); recalcExames();
 }
 function renderExameArquivo(){
   var el=document.getElementById("exame-arquivo");
@@ -1262,7 +1346,7 @@ function aplicaExtraido(parsed){
     var existe=EXAME.outros.some(function(x){return exNoAcc(x.nome)===exNoAcc(o.nome);});
     if(!existe){ EXAME.outros.push(o); n++; }
   });
-  applyExame(EXAME); return n;
+  applyExame(EXAME); recalcExames(); return n;
 }
 document.getElementById("btn-exame-file").addEventListener("click",function(){document.getElementById("in-exame").click();});
 document.getElementById("in-exame").addEventListener("change",function(){
@@ -1466,7 +1550,13 @@ function resumoRows(){
 function examColunas(){
   var cols=[];
   ["hemograma","bioquimica"].forEach(function(sec){
-    EXAM_DIC[sec].forEach(function(a){ cols.push({key:a[0],titulo:a[1]+" ("+a[2]+")"}); });
+    EXAM_DIC[sec].forEach(function(a){
+      var uni=a[2]?" ("+a[2]+")":"";
+      if(DIFF_CELLS.indexOf(a[0])>=0){
+        cols.push({key:a[0]+"_pct",titulo:a[1]+" (%)"});
+        cols.push({key:a[0],titulo:a[1]+" (/µL)"});
+      } else { cols.push({key:a[0],titulo:a[1]+uni}); }
+    });
   });
   return cols;
 }
