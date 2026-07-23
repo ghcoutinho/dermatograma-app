@@ -230,6 +230,15 @@ textarea{resize:vertical; min-height:56px;}
 .fotoit button{position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; border:0;
   background:rgba(15,30,28,.72); color:#fff; font-size:12px; cursor:pointer; line-height:1;}
 .fotovazio{font-size:12.5px; color:var(--muted); font-style:italic; margin-top:8px;}
+.exgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 10px; margin-top:8px;}
+.exrow{display:flex; flex-direction:column;}
+.exrow label{font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:3px;}
+.exrow input{padding:8px 9px; font-size:14px;}
+.exrow input.filled{border-color:var(--teal); background:#f2faf8;}
+.exout{display:grid; grid-template-columns:1fr 78px 74px 30px; gap:6px; align-items:center; margin-top:6px;}
+.exout input{padding:7px 7px; font-size:12.5px; margin-top:0;}
+.exout .del{border:0; background:transparent; color:var(--accent); font-size:16px; cursor:pointer;}
+.exout .h{font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase;}
 
 </style>
 </head>
@@ -245,7 +254,8 @@ textarea{resize:vertical; min-height:56px;}
       <button class="tab active" data-tab="1"><span class="tn">1</span>Identificação</button>
       <button class="tab" data-tab="2"><span class="tn">2</span>Clínico</button>
       <button class="tab" data-tab="3"><span class="tn">3</span>Material</button>
-      <button class="tab" data-tab="4"><span class="tn">4</span>Adicional</button>
+      <button class="tab" data-tab="4"><span class="tn">4</span>Exames</button>
+      <button class="tab" data-tab="5"><span class="tn">5</span>Adicional</button>
     </div>
   </header>
 
@@ -390,8 +400,37 @@ textarea{resize:vertical; min-height:56px;}
     </section>
 
     <!-- ABA 4 -->
+    <!-- ABA 4: EXAMES COMPLEMENTARES -->
     <section class="tabpage" data-page="4">
-      <div class="page-title">4 · Informações adicionais</div>
+      <div class="page-title">4 · Exames complementares</div>
+      <div class="card">
+        <p class="hint">Anexe o hemograma / bioquímica (PDF com texto, DOCX ou imagem). O app tenta ler e preencher os campos — <b>confira os valores antes de salvar</b>.</p>
+        <div class="fotobar">
+          <button type="button" class="minibtn" id="btn-exame-file">📎 Anexar exame</button>
+          <span class="gpsinfo" id="exame-info"></span>
+          <input type="file" id="in-exame" accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" style="display:none">
+        </div>
+        <div class="gpsinfo" id="exame-arquivo" style="margin-top:6px"></div>
+      </div>
+      <div class="card">
+        <div class="subhead" style="margin-top:2px">Hemograma</div>
+        <p class="hint">Apenas números — a unidade está no rótulo.</p>
+        <div class="exgrid" id="ex-hemograma"></div>
+      </div>
+      <div class="card">
+        <div class="subhead" style="margin-top:2px">Bioquímicas séricas</div>
+        <div class="exgrid" id="ex-bioquimica"></div>
+      </div>
+      <div class="card">
+        <div class="subhead" style="margin-top:2px">Outros</div>
+        <div id="ex-outros"></div>
+        <button type="button" class="minibtn sec" id="btn-ex-outro" style="margin-top:8px">+ adicionar analito</button>
+      </div>
+    </section>
+
+    <!-- ABA 5 -->
+    <section class="tabpage" data-page="5">
+      <div class="page-title">5 · Informações adicionais</div>
       <div class="card">
         <label class="field">Observações gerais</label>
         <textarea data-f="extra.adicionais" style="min-height:100px"></textarea>
@@ -405,7 +444,7 @@ textarea{resize:vertical; min-height:56px;}
           <span class="t">animais já salvos na planilha única do aparelho</span></div>
         <button class="btn btn-primary" id="btn-commit" type="button" style="width:100%">✓ Salvar este animal na planilha</button>
         <button class="minibtn sec" id="btn-export2" type="button" style="width:100%; margin-top:8px; padding:12px">📥 Exportar planilha (todos os animais)</button>
-        <button class="minibtn sec" id="btn-fotos" type="button" style="width:100%; margin-top:8px; padding:12px">📷 Exportar fotos (ZIP)</button>
+        <button class="minibtn sec" id="btn-fotos" type="button" style="width:100%; margin-top:8px; padding:12px">📎 Exportar fotos e exames (ZIP)</button>
         <div id="anim-list" style="margin-top:12px"></div>
       </div>
       <div class="card">
@@ -420,7 +459,7 @@ textarea{resize:vertical; min-height:56px;}
     <div class="inner">
       <button class="btn btn-ghost" id="btn-prev" type="button">‹ Anterior</button>
       <div class="progress"><span class="plabel" id="plabel">Etapa 1 de 4</span>
-        <span class="pdots"><i class="on"></i><i></i><i></i><i></i></span></div>
+        <span class="pdots"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
       <button class="btn btn-primary" id="btn-next" type="button">Próximo ›</button>
     </div>
   </div>
@@ -490,7 +529,9 @@ textarea{resize:vertical; min-height:56px;}
 
 <div class="toast" id="toast"></div>
 
+<script src="pdf.min.js"></script>
 <script>
+try{if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="pdf.worker.min.js";}catch(e){}
 var REGIONS=[
  {n:1,x:115,y:40,g:"Cabeça — lateral D (orelha/topo)"},
  {n:2,x:148,y:65,g:"Cabeça — lateral D (fronte)"},
@@ -804,14 +845,14 @@ document.getElementById("lesion-details").addEventListener("input",function(e){
 function showTab(n){curTab=n;
   document.querySelectorAll(".tabpage").forEach(function(p){p.classList.toggle("active",p.dataset.page==String(n));});
   document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.tab==String(n));});
-  document.getElementById("plabel").textContent="Etapa "+n+" de 4";
+  document.getElementById("plabel").textContent="Etapa "+n+" de 5";
   document.querySelectorAll(".pdots i").forEach(function(d,i){d.classList.toggle("on",i<n);});
   document.getElementById("btn-prev").disabled=(n===1);
-  document.getElementById("btn-next").textContent=(n===4)?"✓ Salvar animal":"Próximo ›";
+  document.getElementById("btn-next").textContent=(n===5)?"✓ Salvar animal":"Próximo ›";
   window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){showTab(parseInt(this.dataset.tab,10));});});
 document.getElementById("btn-prev").addEventListener("click",function(){if(curTab>1)showTab(curTab-1);});
-document.getElementById("btn-next").addEventListener("click",function(){if(curTab<4){showTab(curTab+1);}else{commitAnimal();}});
+document.getElementById("btn-next").addEventListener("click",function(){if(curTab<5){showTab(curTab+1);}else{commitAnimal();}});
 function applyZoom(){document.getElementById("derma-svg").style.width=(zoom*100)+"%";document.getElementById("zoom-lbl").textContent="Zoom "+Math.round(zoom*100)+"%";}
 document.getElementById("zoom-in").onclick=function(){zoom=Math.min(3.5,zoom+0.25);applyZoom();};
 document.getElementById("zoom-out").onclick=function(){zoom=Math.max(1,zoom-0.25);applyZoom();};
@@ -860,7 +901,7 @@ function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return {"&"
 /* ================= estado / persistencia ================= */
 function setPath(o,p,v){var a=p.split("."),x=o;for(var i=0;i<a.length-1;i++){if(typeof x[a[i]]!=="object"||x[a[i]]==null)x[a[i]]={};x=x[a[i]];}x[a[a.length-1]]=v;}
 function getPath(o,p){var a=p.split("."),x=o;for(var i=0;i<a.length;i++){if(x==null)return undefined;x=x[a[i]];}return x;}
-function collect(){var data={ident:{},clinico:{},material:{},extra:{},regioes:REG};
+function collect(){var data={ident:{},clinico:{},material:{},extra:{},regioes:REG,exames:EXAME};
   document.querySelectorAll("[data-f]").forEach(function(el){
     if(el.type==="radio"){if(el.checked)setPath(data,el.dataset.f,el.value);}
     else if(el.type==="checkbox"){setPath(data,el.dataset.f,el.checked);}
@@ -869,7 +910,7 @@ function collect(){var data={ident:{},clinico:{},material:{},extra:{},regioes:RE
 function applyData(data){document.querySelectorAll("[data-f]").forEach(function(el){var v=getPath(data,el.dataset.f);
   if(el.type==="radio"){el.checked=(v===el.value);}else if(el.type==="checkbox"){el.checked=!!v;}
   else if(el.tagName==="SELECT"){if(v)el.value=v;}else if(v!=null){el.value=v;}});
-  REG=(data&&data.regioes)?data.regioes:{};refreshMarkers();refreshSummary();updateId();syncCond();}
+  REG=(data&&data.regioes)?data.regioes:{};applyExame(data&&data.exames);refreshMarkers();refreshSummary();updateId();syncCond();}
 var saveTimer=null;
 function persist(){try{localStorage.setItem(K_CUR,JSON.stringify(collect()));}catch(e){}}
 function schedulePersist(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){persist();updateId();},400);}
@@ -878,7 +919,7 @@ document.addEventListener("change",function(e){if(e.target.closest("#sheet"))ret
 var toastTimer=null;
 function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show");},2400);}
 
-function clearForm(){REG={};
+function clearForm(){REG={};EXAME={valores:{},outros:[],arquivo:null};
   document.querySelectorAll("[data-f]").forEach(function(el){
     if(el.type==="radio"||el.type==="checkbox"){el.checked=false;}
     else if(el.dataset.f==="ident.especie"){el.value="Lobo-guará (Chrysocyon brachyurus)";}
@@ -887,7 +928,7 @@ function clearForm(){REG={};
     else{el.value="";}});
   syncCond();
   setGpsInfo("Toque em “Obter” para capturar a posição do aparelho.");
-  refreshMarkers();refreshSummary();persist();updateId();}
+  applyExame(EXAME);refreshMarkers();refreshSummary();persist();updateId();}
 document.getElementById("btn-new").addEventListener("click",function(){
   if(!confirm("Limpar o formulário atual? Isso NÃO apaga os animais já salvos na planilha."))return;
   clearForm();showTab(1);toast("Formulário limpo");});
@@ -947,7 +988,9 @@ function xmlEsc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){re
 function colName(i){var s="";i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
 function sheetXml(rows,widths){var cols="";
   if(widths){cols='<cols>'+widths.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}).join("")+'</cols>';}
-  var body="";rows.forEach(function(row,ri){var cells="";row.forEach(function(val,ci){cells+='<c r="'+colName(ci)+(ri+1)+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(val)+'</t></is></c>';});body+='<row r="'+(ri+1)+'">'+cells+'</row>';});
+  var body="";rows.forEach(function(row,ri){var cells="";row.forEach(function(val,ci){var ref=colName(ci)+(ri+1);
+    if(typeof val==="number"&&isFinite(val)){cells+='<c r="'+ref+'"><v>'+val+'</v></c>';}
+    else{cells+='<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(val)+'</t></is></c>';}});body+='<row r="'+(ri+1)+'">'+cells+'</row>';});
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+cols+'<sheetData>'+body+'</sheetData></worksheet>';}
 function makeXlsx(sheets){var files=[];
   var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
@@ -962,6 +1005,282 @@ function makeXlsx(sheets){var files=[];
   return zipStore(files);}
 
 
+
+
+/* ===================== EXAMES COMPLEMENTARES ===================== */
+/* ================= Exames complementares: dicionario + parser ================= */
+/* Cada analito: key, rotulo, unidade, sinonimos (sem acento, minusculo). */
+var EXAM_DIC = {
+  hemograma: [
+    ["eritrocitos","Eritrócitos","x10⁶/µL",["eritrocitos","eritrocito","hemacias","hemacia","hemaceas"]],
+    ["hemoglobina","Hemoglobina","g/dL",["hemoglobina"]],
+    ["hematocrito","Hematócrito","%",["hematocrito","volume globular","globular vg","vg hematocrito"]],
+    ["vcm","VCM","fL",["vcm","volume corpuscular medio"]],
+    ["hcm","HCM","pg",["hcm","hemoglobina corpuscular media"]],
+    ["chcm","CHCM","g/dL",["chcm","concentracao de hemoglobina corpuscular media"]],
+    ["rdw","RDW","%",["rdw"]],
+    ["plaquetas","Plaquetas","x10³/µL",["plaquetas","plaqueta","contagem de plaquetas"]],
+    ["ppt","Proteína plasmática total","g/dL",["proteina plasmatica total","proteinas plasmaticas","proteina total plasmatica","ppt"]],
+    ["leucocitos","Leucócitos totais","/µL",["leucocitos totais","leucocitos","contagem de leucocitos","leucometria global"]],
+    ["metamielocitos","Metamielócitos","/µL",["metamielocitos"]],
+    ["bastonetes","Bastonetes","/µL",["neutrofilos bastonetes","bastonetes","bastoes","bastao"]],
+    ["segmentados","Neutrófilos segmentados","/µL",["neutrofilos segmentados","segmentados","neutrofilos"]],
+    ["eosinofilos","Eosinófilos","/µL",["eosinofilos"]],
+    ["basofilos","Basófilos","/µL",["basofilos"]],
+    ["linfocitos","Linfócitos","/µL",["linfocitos"]],
+    ["monocitos","Monócitos","/µL",["monocitos"]]
+  ],
+  bioquimica: [
+    ["ureia","Ureia","mg/dL",["ureia"]],
+    ["creatinina","Creatinina","mg/dL",["creatinina"]],
+    ["alt","ALT (TGP)","U/L",["alt (tgp)","alanina aminotransferase","tgp","alt"]],
+    ["ast","AST (TGO)","U/L",["ast (tgo)","aspartato aminotransferase","tgo","ast"]],
+    ["fa","Fosfatase alcalina","U/L",["fosfatase alcalina","fosfatase"]],
+    ["ggt","GGT","U/L",["gama glutamil transferase","gama gt","ggt"]],
+    ["ptn_totais","Proteínas totais","g/dL",["proteinas totais sericas","proteinas totais","proteina total"]],
+    ["albumina","Albumina","g/dL",["albumina"]],
+    ["globulinas","Globulinas","g/dL",["globulinas","globulina"]],
+    ["glicose","Glicose","mg/dL",["glicose","glicemia"]],
+    ["colesterol","Colesterol total","mg/dL",["colesterol total","colesterol"]],
+    ["triglicerides","Triglicerídeos","mg/dL",["triglicerideos","triglicerides","triglicerideos sericos"]],
+    ["bili_total","Bilirrubina total","mg/dL",["bilirrubina total"]],
+    ["bili_direta","Bilirrubina direta","mg/dL",["bilirrubina direta"]],
+    ["bili_indireta","Bilirrubina indireta","mg/dL",["bilirrubina indireta"]],
+    ["calcio","Cálcio total","mg/dL",["calcio total","calcio"]],
+    ["calcio_ionico","Cálcio iônico","mmol/L",["calcio ionico"]],
+    ["fosforo","Fósforo","mg/dL",["fosforo","fosfato inorganico","fosforo inorganico"]],
+    ["magnesio","Magnésio","mg/dL",["magnesio"]],
+    ["sodio","Sódio","mEq/L",["sodio"]],
+    ["potassio","Potássio","mEq/L",["potassio"]],
+    ["cloreto","Cloreto","mEq/L",["cloreto","cloro"]],
+    ["amilase","Amilase","U/L",["amilase"]],
+    ["lipase","Lipase","U/L",["lipase"]],
+    ["ck","Creatina quinase (CK)","U/L",["creatina quinase","creatinofosfoquinase","cpk","ck"]],
+    ["fructosamina","Frutosamina","µmol/L",["frutosamina","fructosamina"]]
+  ]
+};
+var EXAM_BLOCK = ["paciente","especie","espécie","data","laboratorio","laboratório","clinica","clínica","resultado",
+  "referencia","referência","unidade","analito","analitos","veterinario","veterinário","crmv","proprietario",
+  "proprietário","tutor","idade","sexo","raca","raça","material","metodo","método","obs","observacao","observação",
+  "responsavel","responsável","valores de referencia","hemograma","bioquimica","bioquímica","serica","sérica","outros",
+  "eritrograma","leucograma","plaquetograma","contagem","exame","exames","hospital","medico","médico"];
+
+function exNoAcc(s){return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();}
+
+/* numero em pt-BR -> Number, so digitos. Trata milhar (.) e decimal (,). */
+function exParseNum(raw){
+  if(raw==null) return null;
+  var s=String(raw).trim().replace(/\s/g,"");
+  if(!s) return null;
+  var neg=/^-/.test(s); s=s.replace(/^-/,"");
+  if(s.indexOf(",")>=0){ s=s.replace(/\./g,"").replace(",", "."); }
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)){ s=s.replace(/\./g,""); }   /* 280.000 -> 280000 */
+  var n=parseFloat(s);
+  if(isNaN(n)) return null;
+  return neg?-n:n;
+}
+
+/* acha o primeiro numero (resultado) numa parte de linha */
+function exFirstNum(str){
+  var m=String(str).match(/-?\d[\d.\,]*/);
+  if(!m) return null;
+  /* rejeita datas: numero seguido de / */
+  var idx=m.index+m[0].length;
+  if(str.charAt(idx)==="/"||str.charAt(m.index-1)==="/") return null;
+  return exParseNum(m[0]);
+}
+
+/* monta lista de sinonimos (ordenados por comprimento desc) */
+function exSyns(){
+  var out=[];
+  ["hemograma","bioquimica"].forEach(function(sec){
+    EXAM_DIC[sec].forEach(function(a){
+      a[3].forEach(function(sy){ out.push({sec:sec,key:a[0],rot:a[1],uni:a[2],syn:exNoAcc(sy)}); });
+    });
+  });
+  out.sort(function(x,y){return y.syn.length-x.syn.length;});
+  return out;
+}
+
+function parseExame(text){
+  var res={hemograma:{},bioquimica:{},outros:[]};
+  var syns=exSyns();
+  var linhas=String(text||"").split(/\r?\n/);
+  linhas.forEach(function(linRaw){
+    var lin=linRaw.replace(/\t/g," ").trim();
+    if(lin.length<2) return;
+    var low=exNoAcc(lin);
+    /* 1) tenta analitos conhecidos (mais especifico primeiro) */
+    for(var i=0;i<syns.length;i++){
+      var sy=syns[i];
+      var pos=low.indexOf(sy.syn);
+      if(pos<0) continue;
+      /* limite de palavra a esquerda */
+      var antes=low.charAt(pos-1);
+      if(antes && /[a-z0-9]/.test(antes)) continue;
+      if(res[sy.sec][sy.key]!==undefined) return;  /* ja preenchido nesta linha? pula linha */
+      var resto=lin.slice(pos+sy.syn.length);
+      var val=exFirstNum(resto);
+      if(val===null) continue;
+      res[sy.sec][sy.key]=val;
+      return; /* linha consumida */
+    }
+    /* 2) linha nao reconhecida: tenta "Rotulo: valor unidade" -> Outros */
+    var m=lin.match(/^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9()\/µ. \-]{1,44}?)\s*[:\-]?\s+(-?\d[\d.,]*)\s*([A-Za-zµ%\/^0-9.\-]{0,12})/);
+    if(!m) return;
+    var nome=m[1].trim(), lowNome=exNoAcc(nome);
+    if(EXAM_BLOCK.some(function(b){return lowNome.indexOf(exNoAcc(b))>=0;})) return;
+    if(lowNome.replace(/[^a-z]/g,"").length<2) return;
+    /* rejeita data no valor */
+    var after=lin.slice(lin.indexOf(m[2])+m[2].length);
+    if(after.charAt(0)==="/") return;
+    var val=exParseNum(m[2]); if(val===null) return;
+    res.outros.push({nome:nome,valor:val,unidade:(m[3]||"").trim()});
+  });
+  return res;
+}
+
+
+var EXAME={valores:{},outros:[],arquivo:null};
+
+function buildExamGrids(){
+  ["hemograma","bioquimica"].forEach(function(sec){
+    var host=document.getElementById(sec==="hemograma"?"ex-hemograma":"ex-bioquimica");
+    host.innerHTML=EXAM_DIC[sec].map(function(a){
+      return '<div class="exrow"><label>'+a[1]+' <span style="color:#9aa">('+a[2]+')</span></label>'+
+        '<input type="text" inputmode="decimal" class="exval" data-sec="'+sec+'" data-key="'+a[0]+'" placeholder="—"></div>';
+    }).join("");
+  });
+  document.querySelectorAll(".exval").forEach(function(inp){
+    inp.addEventListener("change",function(){
+      var v=exParseNum(this.value);
+      if(v===null){ this.value=""; delete EXAME.valores[this.dataset.key]; this.classList.remove("filled"); }
+      else { this.value=String(v).replace(".",","); EXAME.valores[this.dataset.key]=v; this.classList.add("filled"); }
+      schedulePersist();
+    });
+  });
+}
+function renderExOutros(){
+  var host=document.getElementById("ex-outros");
+  if(!EXAME.outros.length){ host.innerHTML='<p class="fotovazio">Nenhum analito adicional.</p>'; return; }
+  host.innerHTML='<div class="exout"><span class="h">Analito</span><span class="h">Valor</span><span class="h">Unidade</span><span></span></div>'+
+    EXAME.outros.map(function(o,i){
+      return '<div class="exout" data-i="'+i+'">'+
+        '<input type="text" class="eo-nome" value="'+String(o.nome||"").replace(/"/g,"&quot;")+'" placeholder="nome">'+
+        '<input type="text" inputmode="decimal" class="eo-val" value="'+(o.valor==null?"":String(o.valor).replace(".",","))+'" placeholder="nº">'+
+        '<input type="text" class="eo-uni" value="'+String(o.unidade||"").replace(/"/g,"&quot;")+'" placeholder="un.">'+
+        '<button type="button" class="del" title="Remover">✕</button></div>';
+    }).join("");
+  host.querySelectorAll(".exout[data-i]").forEach(function(row){
+    var i=+row.dataset.i;
+    row.querySelector(".eo-nome").addEventListener("change",function(){EXAME.outros[i].nome=this.value.trim();schedulePersist();});
+    row.querySelector(".eo-uni").addEventListener("change",function(){EXAME.outros[i].unidade=this.value.trim();schedulePersist();});
+    row.querySelector(".eo-val").addEventListener("change",function(){
+      var v=exParseNum(this.value); EXAME.outros[i].valor=(v===null?"":v);
+      this.value=(v===null?"":String(v).replace(".",",")); schedulePersist();});
+    row.querySelector(".del").addEventListener("click",function(){
+      EXAME.outros.splice(i,1); renderExOutros(); schedulePersist();});
+  });
+}
+document.getElementById("btn-ex-outro").addEventListener("click",function(){
+  EXAME.outros.push({nome:"",valor:"",unidade:""}); renderExOutros(); schedulePersist();});
+
+function applyExame(ex){
+  EXAME=ex&&typeof ex==="object"?{valores:ex.valores||{},outros:ex.outros||[],arquivo:ex.arquivo||null}:{valores:{},outros:[],arquivo:null};
+  document.querySelectorAll(".exval").forEach(function(inp){
+    var v=EXAME.valores[inp.dataset.key];
+    if(v!==undefined&&v!==null){inp.value=String(v).replace(".",",");inp.classList.add("filled");}
+    else{inp.value="";inp.classList.remove("filled");}
+  });
+  renderExOutros(); renderExameArquivo();
+}
+function renderExameArquivo(){
+  var el=document.getElementById("exame-arquivo");
+  el.textContent=EXAME.arquivo?("Arquivo anexado: "+EXAME.arquivo.nome):"";
+}
+
+/* ---- extracao de texto ---- */
+async function extractPdfText(file){
+  if(!window.pdfjsLib) throw new Error("leitor de PDF indisponível (use o app instalado)");
+  var buf=await file.arrayBuffer();
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  var out=[];
+  for(var pn=1;pn<=pdf.numPages;pn++){
+    var page=await pdf.getPage(pn); var tc=await page.getTextContent();
+    var linhas={};
+    tc.items.forEach(function(it){
+      var y=Math.round(it.transform[5]),key=null;
+      for(var k in linhas){ if(Math.abs(k-y)<=3){key=k;break;} }
+      if(key===null)key=y; (linhas[key]=linhas[key]||[]).push({x:it.transform[4],s:it.str});
+    });
+    Object.keys(linhas).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){
+      out.push(linhas[y].sort(function(a,b){return a.x-b.x;}).map(function(p){return p.s;}).join(" ").replace(/\s+/g," ").trim());
+    });
+  }
+  return out.join("\n");
+}
+async function extractDocxText(file){
+  if(typeof DecompressionStream==="undefined") throw new Error("navegador não suporta leitura de DOCX");
+  var buf=await file.arrayBuffer(),u8=new Uint8Array(buf),dv=new DataView(buf);
+  var i=u8.length-22; for(;i>=0;i--){ if(dv.getUint32(i,true)===0x06054b50)break; }
+  if(i<0) throw new Error("DOCX inválido");
+  var cnt=dv.getUint16(i+10,true),off=dv.getUint32(i+16,true),p=off;
+  for(var e=0;e<cnt;e++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    var method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true);
+    var nlen=dv.getUint16(p+28,true),elen=dv.getUint16(p+30,true),clen=dv.getUint16(p+32,true);
+    var lho=dv.getUint32(p+42,true);
+    var name=new TextDecoder().decode(u8.subarray(p+46,p+46+nlen));
+    if(name==="word/document.xml"){
+      var lnl=dv.getUint16(lho+26,true),lel=dv.getUint16(lho+28,true),ds=lho+30+lnl+lel;
+      var comp=u8.subarray(ds,ds+csize),xml;
+      if(method===0){ xml=new TextDecoder().decode(comp); }
+      else { var stream=new Blob([comp]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+             xml=new TextDecoder().decode(await new Response(stream).arrayBuffer()); }
+      xml=xml.replace(/<w:tab[^>]*\/>/g," ").replace(/<\/w:p>/g,"\n");
+      var txt=xml.replace(/<[^>]+>/g,"");
+      return txt.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'");
+    }
+    p+=46+nlen+elen+clen;
+  }
+  throw new Error("document.xml não encontrado no DOCX");
+}
+function aplicaExtraido(parsed){
+  var n=0;
+  ["hemograma","bioquimica"].forEach(function(sec){
+    Object.keys(parsed[sec]).forEach(function(k){ EXAME.valores[k]=parsed[sec][k]; n++; });
+  });
+  (parsed.outros||[]).forEach(function(o){
+    var existe=EXAME.outros.some(function(x){return exNoAcc(x.nome)===exNoAcc(o.nome);});
+    if(!existe){ EXAME.outros.push(o); n++; }
+  });
+  applyExame(EXAME); return n;
+}
+document.getElementById("btn-exame-file").addEventListener("click",function(){document.getElementById("in-exame").click();});
+document.getElementById("in-exame").addEventListener("change",function(){
+  var file=this.files&&this.files[0]; this.value=""; if(!file)return;
+  var info=document.getElementById("exame-info"); info.className="gpsinfo";
+  var nome=file.name,ext=(nome.split(".").pop()||"").toLowerCase();
+  var id="ex"+Date.now()+"_"+Math.round(Math.random()*1e6);
+  info.textContent="anexando arquivo...";
+  idbPut(id,file).then(function(){
+    if(EXAME.arquivo)idbDel(EXAME.arquivo.id);
+    EXAME.arquivo={id:id,nome:nome,ext:ext}; renderExameArquivo(); schedulePersist();
+  }).catch(function(){});
+  var isPdf=ext==="pdf"||file.type.indexOf("pdf")>=0;
+  var isDocx=ext==="docx"||file.type.indexOf("wordprocessing")>=0;
+  var isImg=file.type.indexOf("image")>=0;
+  if(isImg){ info.textContent="Imagem anexada. A leitura automática de imagem não funciona offline — preencha os campos manualmente."; return; }
+  info.textContent="lendo o exame...";
+  var prom=isPdf?extractPdfText(file):(isDocx?extractDocxText(file):Promise.reject(new Error("formato não suportado para leitura")));
+  prom.then(function(txt){
+    var parsed=parseExame(txt); var n=aplicaExtraido(parsed);
+    info.className="gpsinfo"; info.textContent=n?(n+" valor(es) extraído(s) — confira antes de salvar"):"Nenhum valor reconhecido automaticamente. Preencha manualmente.";
+    toast(n?("Exame lido: "+n+" valor(es)"):"Exame anexado (sem leitura automática)");
+  }).catch(function(err){
+    info.className="gpsinfo err"; info.textContent="Não foi possível ler: "+err.message+". Arquivo anexado; preencha manualmente.";
+  });
+});
 
 /* ================= 9) fotos por regiao (IndexedDB) ================= */
 var IDB=null;
@@ -1041,9 +1360,15 @@ function listaFotos(){
     ((REG[n]||{}).fotos||[]).forEach(function(f,i){itens.push({id:f.id,nome:nomeFoto("EM_EDICAO",n,i)});});});
   return itens;}
 function contaFotos(a){var t=0;Object.keys(a.regioes||{}).forEach(function(n){t+=(((a.regioes[n]||{}).fotos)||[]).length;});return t;}
+function listaArquivosExame(){
+  var itens=[];
+  ANIMALS.forEach(function(a){var ex=a.exames||{};if(ex.arquivo){
+    itens.push({id:ex.arquivo.id,nome:asciiOnly((a.ident||{}).idAnimal||"SEM_ID").replace(/[^A-Za-z0-9_\-]/g,"")+"_exame."+(ex.arquivo.ext||"bin")});}});
+  if(EXAME.arquivo)itens.push({id:EXAME.arquivo.id,nome:"EM_EDICAO_exame."+(EXAME.arquivo.ext||"bin")});
+  return itens;}
 function exportFotos(){
-  var itens=listaFotos();
-  if(!itens.length){alert("Nenhuma foto registrada ainda.");return;}
+  var itens=listaFotos().concat(listaArquivosExame());
+  if(!itens.length){alert("Nenhuma foto ou exame registrado ainda.");return;}
   toast("Preparando "+itens.length+" foto(s)...");
   var arquivos=[], chain=Promise.resolve();
   itens.forEach(function(it){chain=chain.then(function(){
@@ -1056,7 +1381,7 @@ function exportFotos(){
     var a=document.createElement("a");a.href=url;a.download="Fotos_Dermatograma.zip";
     document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
-    toast(arquivos.length+" foto(s) exportada(s) em ZIP");});
+    toast(arquivos.length+" arquivo(s) exportado(s) em ZIP");});
 }
 
 /* ================= planilha unica (todos os animais) ================= */
@@ -1064,7 +1389,7 @@ function animalRows(){
   var head=["ID Animal","Nome do animal","Data","Horário","Espécie","Local","Município","GPS","Sexo","Sarna","Idade","Estimativa","Peso (kg)",
    "Inspeção indireta","Hidratação","Desidratação (%)","Mucosas","Linfonodos","Linfonodos — quais",
    "FC","FR","T °C","TPC","Pressão arterial média","SPO2","Glicemia","ECC","Palpação",
-   "Usuário","Equipe","Observações gerais","Nº regiões acometidas","Nº lesões registradas","Nº de fotos","Salvo em"];
+   "Usuário","Equipe","Observações gerais","Nº regiões acometidas","Nº lesões registradas","Nº de fotos","Exame anexado","Salvo em"];
   var rows=[head];
   ANIMALS.forEach(function(a){var i=a.ident||{},c=a.clinico||{},e=a.extra||{},rg=a.regioes||{};
     var nreg=Object.keys(rg).length,nles=0;
@@ -1074,7 +1399,7 @@ function animalRows(){
       c.inspecao||"",c.hidratacao||"",(c.hidratacao==="Desidratado"&&c.desidratacao)?String(c.desidratacao):"",
       c.mucosas||"",c.linfonodos||"",(c.linfonodos==="Reativos")?(c.linfonodosQuais||""):"",
       c.fc||"",c.fr||"",c.temp||"",c.tpc||"",c.pam||c.pas||"",c.spo2||"",c.glicemia||"",c.ecc||"",c.palpacao||"",
-      e.usuario||"",e.equipe||"",e.adicionais||"",String(nreg),String(nles),String(contaFotos(a)),
+      e.usuario||"",e.equipe||"",e.adicionais||"",String(nreg),String(nles),String(contaFotos(a)),((a.exames||{}).arquivo?(a.exames.arquivo.nome||"Sim"):""),
       (a.salvoEm||"").slice(0,19).replace("T"," ")]);});
   if(rows.length===1)rows.push(["— nenhum animal salvo —"]);
   return rows;}
@@ -1130,12 +1455,40 @@ function resumoRows(){
     if(an)rows.push([t,LESION_SIGLA[t]||"",String(an),String(rg),cnt?Math.round(soma/cnt)+"%":""]);});
   if(rows.length===4)rows.push(["— nenhuma lesão registrada —","","","",""]);
   return rows;}
+function examColunas(){
+  var cols=[];
+  ["hemograma","bioquimica"].forEach(function(sec){
+    EXAM_DIC[sec].forEach(function(a){ cols.push({key:a[0],titulo:a[1]+" ("+a[2]+")"}); });
+  });
+  return cols;
+}
+function examesRows(){
+  var cols=examColunas();
+  var rows=[["ID Animal","Nome","Data"].concat(cols.map(function(c){return c.titulo;}))];
+  ANIMALS.forEach(function(a){var i=a.ident||{},ex=a.exames||{valores:{}};
+    var lin=[i.idAnimal||"",i.nome||"",i.data||""];
+    cols.forEach(function(c){var v=(ex.valores||{})[c.key];
+      lin.push((typeof v==="number"&&isFinite(v))?v:"");});   /* numero puro ou vazio */
+    rows.push(lin);});
+  if(rows.length===1)rows.push(["— nenhum animal salvo —"]);
+  return rows;}
+function examesOutrosRows(){
+  var rows=[["ID Animal","Data","Analito","Valor","Unidade"]];
+  ANIMALS.forEach(function(a){var i=a.ident||{},ex=a.exames||{};
+    (ex.outros||[]).forEach(function(o){
+      var v=(typeof o.valor==="number"&&isFinite(o.valor))?o.valor:(exParseNum(o.valor));
+      rows.push([i.idAnimal||"",i.data||"",o.nome||"",(v===null||v===undefined||v==="")?"":v,o.unidade||""]);});});
+  if(rows.length===1)rows.push(["— nenhum analito adicional —","","","",""]);
+  return rows;}
+
 function exportExcel(){
   if(!ANIMALS.length&&!confirm("Nenhum animal foi salvo na planilha ainda. Exportar mesmo assim (planilha vazia)?"))return;
-  var sheets=[{name:"Animais",rows:animalRows(),widths:[16,18,12,9,30,20,20,22,12,12,10,14,10,30,15,14,14,14,26,8,8,8,8,20,8,10,8,30,20,20,34,10,10,10,18]},
+  var sheets=[{name:"Animais",rows:animalRows(),widths:[16,18,12,9,30,20,20,22,12,12,10,14,10,30,15,14,14,14,26,8,8,8,8,20,8,10,8,30,20,20,34,10,10,10,22,18]},
               {name:"Lesões",rows:lesionRows(),widths:[16,12,20,9,28,20,7,13,20,11,34,34]},
               {name:"Material",rows:materialRows(),widths:[16,12].concat(MATERIALS.map(function(){return 24;})).concat(matLegadoUsadas().map(function(){return 26;})).concat([26])},
               {name:"Locais",rows:locaisRows(),widths:[30,14,40,16,16]},
+              {name:"Exames",rows:examesRows(),widths:[16,16,12].concat(examColunas().map(function(){return 16;}))},
+              {name:"Exames — Outros",rows:examesOutrosRows(),widths:[16,12,26,12,12]},
               {name:"Resumo",rows:resumoRows(),widths:[24,8,14,14,10]}];
   var bytes=makeXlsx(sheets);
   var blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
@@ -1198,7 +1551,7 @@ document.getElementById("btn-pdf").addEventListener("click",function(){
   toast("PDF com 15 etiquetas de "+id);});
 
 /* ================= init ================= */
-loadDb(); renderUsers(); buildMunList(); buildLocalList(); renderLocais(); buildMaterial(); buildChips(); buildHotspots(); applyZoom(); showTab(1); renderDb();
+loadDb(); renderUsers(); buildMunList(); buildLocalList(); renderLocais(); buildMaterial(); buildChips(); buildExamGrids(); buildHotspots(); applyZoom(); showTab(1); renderDb();
 (function init(){var raw=null;try{raw=localStorage.getItem(K_CUR);}catch(e){}
   if(raw){try{applyData(JSON.parse(raw));}catch(e){refreshMarkers();refreshSummary();updateId();}}
   else{refreshMarkers();refreshSummary();updateId();}

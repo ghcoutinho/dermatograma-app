@@ -1,8 +1,8 @@
 /* Dermatograma — Canídeos Silvestres · service worker
    Cache-first: depois da primeira visita o app abre sem internet. */
-const CACHE = "derma-v12";
+const CACHE = "derma-v13";
 const ASSETS = ["./","./index.html","./manifest.webmanifest",
-                "./icon-192.png","./icon-512.png","./icon-maskable.png"];
+                "./icon-192.png","./icon-512.png","./icon-maskable.png","./pdf.min.js","./pdf.worker.min.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
